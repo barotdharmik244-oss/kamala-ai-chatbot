@@ -10,7 +10,20 @@ app = Flask(__name__)
 CORS(app)
 
 # Load Excel File
-df = pd.read_excel("../data/knowledge_base.xlsx")
+import os
+
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
+
+excel_path = os.path.join(
+    BASE_DIR,
+    "..",
+    "data",
+    "knowledge_base.xlsx"
+)
+
+df = pd.read_excel(excel_path)
 
 # Clean Data
 df.columns = df.columns.str.strip()
