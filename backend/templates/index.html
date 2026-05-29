@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Kamala Paints Chatbot</title>
+    <label for="language">
+    Choose Language
+</label>
+    <select id="language">
+
+    <option value="en-US">
+        English
+    </option>
+
+    <option value="gu-IN">
+        Gujarati
+    </option>
+
+</select>
+</head>
+
+  <style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family: Arial, sans-serif;
+    background:#f1f5f9;
+    min-height:100vh;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    padding:20px;
+}select{
+    width:100%;
+    padding:12px;
+    margin-bottom:15px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    font-size:16px;
+}
+
+.container{
+    width:100%;
+    display:flex;
+    justify-content:center;
+}
+
+.chat-card{
+    width:500px;
+    background:white;
+    border-radius:20px;
+    padding:25px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.1);
+}
+
+.chat-card h1{
+    text-align:center;
+    margin-bottom:20px;
+    color:#1e293b;
+}
+
+#response{
+    background:#f8fafc;
+    border-radius:10px;
+    padding:20px;
+    min-height:180px;
+    margin-bottom:20px;
+    overflow-y:auto;
+    line-height:1.6;
+    color:#334155;
+    border:1px solid #e2e8f0;
+}
+
+.input-area{
+    display:flex;
+    gap:10px;
+}
+
+input{
+    flex:1;
+    padding:14px;
+    border-radius:10px;
+    border:1px solid #cbd5e1;
+    font-size:16px;
+    outline:none;
+}
+
+input:focus{
+    border-color:#2563eb;
+}
+
+button{
+    padding:14px 22px;
+    background:#2563eb;
+    color:white;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+button:hover{
+    background:#1d4ed8;
+}
+label{
+    display:block;
+    margin-bottom:8px;
+    font-weight:bold;
+    color:#334155;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="chat-card">
+
+        <h1>Kamala Paints & Hardware</h1>
+
+        <div id="response">
+            Welcome! Ask your question...
+        </div>
+
+        <div class="input-area">
+
+            <input
+                type="text"
+                id="question"
+                placeholder="Type your question..."
+            >
+
+            <button onclick="sendQuestion()">
+    Send
+</button>
+
+<button onclick="startVoice()">
+    🎤 Speak
+</button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+async function sendQuestion() {
+
+    let question = document.getElementById("question").value;
+
+    if(question.trim() === "") {
+        return;
+    }
+
+    document.getElementById("response").innerHTML =
+        "Searching...";
+
+    let response = await fetch("http://127.0.0.1:5000/ask", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+            question: question
+        })
+    });
+
+    let data = await response.json();
+
+    document.getElementById("response").innerHTML =
+        "<b>You:</b> " + question +
+        "<br><br>" +
+        "<b>Assistant:</b> " + data.answer;
+        const speech = new SpeechSynthesisUtterance(
+    data.answer
+);
+
+speech.lang =
+    document.getElementById("language").value;
+
+window.speechSynthesis.speak(speech);
+
+    document.getElementById("question").value = "";
+    document.getElementById("question")
+.addEventListener("keypress", function(event){
+
+    if(event.key === "Enter"){
+        sendQuestion();
+    }
+
+});
+}
+function startVoice() {
+
+    const selectedLanguage =
+        document.getElementById("language").value;
+
+    const recognition =
+        new webkitSpeechRecognition();
+
+    recognition.lang = selectedLanguage;
+
+    recognition.start();
+
+    recognition.onresult = function(event) {
+
+        const transcript =
+            event.results[0][0].transcript;
+
+        document.getElementById("question").value =
+            transcript;
+
+        sendQuestion();
+    };
+}
+</script>
+
+</body>
+</html>
