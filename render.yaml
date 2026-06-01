@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: kamala-ai-chatbot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd backend && gunicorn app:appgit add .
+    
