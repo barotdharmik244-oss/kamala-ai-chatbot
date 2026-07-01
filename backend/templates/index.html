@@ -206,21 +206,19 @@ window.speechSynthesis.speak(speech);
     }
 
 });
-}
+};
 function startVoice() {
 
     const selectedLanguage =
         document.getElementById("language").value;
 
     const recognition =
-        new webkitSpeechRecognition();
+    new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 
     recognition.lang = selectedLanguage;
     new Audio("https://www.soundjay.com/buttons/sounds/button-09.mp3").play();
 
-    recognition.start();
-    micButton.style.backgroundColor = "red";
-
+    recognition.start()
     recognition.onresult = function(event) {
 
     const transcript =
