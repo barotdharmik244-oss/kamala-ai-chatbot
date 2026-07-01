@@ -2,8 +2,5 @@ flask
 flask-cors
 pandas
 openpyxl
-sentence-transformers
-faiss-cpu
 gunicorn
-torch
-numpy
+google-generativeai
