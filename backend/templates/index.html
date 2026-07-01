@@ -169,7 +169,7 @@ async function sendQuestion() {
     document.getElementById("response").innerHTML =
         "Searching...";
 
-    let response = await fetch("http://127.0.0.1:5000/ask", {
+        let response = await fetch("/ask", {
 
         method: "POST",
 
@@ -221,16 +221,16 @@ function startVoice() {
     recognition.start();
     micButton.style.backgroundColor = "red";
 
-    recognition.onresult = function(micButton.style.backgroundColor = "";) {
+    recognition.onresult = function(event) {
 
-        const transcript =
-            event.results[0][0].transcript;
+    const transcript =
+        event.results[0][0].transcript;
 
-        document.getElementById("question").value =
-            transcript;
+    document.getElementById("question").value =
+        transcript;
 
-        sendQuestion();
-    };
+    sendQuestion();
+};
 }
 </script>
 
