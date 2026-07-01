@@ -2,9 +2,6 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
 import pandas as pd
-from sentence_transformers import SentenceTransformer
-import faiss
-import numpy as np
 import os
 
 import google.generativeai as genai
@@ -49,24 +46,8 @@ questions_gu = (
 
 questions = (questions_en + " " + questions_gu).tolist()
 
-
 print("Knowledge Base Loaded Successfully")
 print("Total Questions:", len(questions))
-
-# Load Multilingual Model
-model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-
-# Create Embeddings
-question_embeddings = model.encode(questions, convert_to_numpy=True)
-
-# Convert to float32 and Normalize
-question_embeddings = np.array(question_embeddings).astype("float32")
-faiss.normalize_L2(question_embeddings)
-
-# Create FAISS Index
-dimension = question_embeddings.shape[1]
-index = faiss.IndexFlatIP(dimension)
-index.add(question_embeddings)
 
 
 @app.route("/")
@@ -77,35 +58,42 @@ def home():
 @app.route("/ask", methods=["POST"])
 def ask_question():
 
-    data = request.json
-    user_question = data.get("question", "").lower().strip()
+    data = request.get_json(silent=True) or {}
+    user_question = str(data.get("question", "")).lower().strip()
 
     print("User Question:", user_question)
 
-    # User Embedding
-    user_embedding = model.encode([user_question], convert_to_numpy=True)
-    user_embedding = np.array(user_embedding).astype("float32")
-    
-    faiss.normalize_L2(user_embedding)
+    if not user_question:
+        return jsonify({
+            "question": user_question,
+            "answer": "Please type a question."
+        })
 
-    # Search
-    D, I = index.search(user_embedding, k=1)
+    best_match_index = -1
 
-    similarity_score = D[0][0]
-    best_match_index = I[0][0]
+    for idx, row in df.iterrows():
 
-    print("Similarity:", similarity_score)
+        english_q = str(row["Question (English)"]).lower()
+        gujarati_q = str(row["Question (Gujarati)"]).lower()
 
-    # Threshold check — FIX: return is now inside both branches
-    if similarity_score > 0.40:
+        if (
+            user_question in english_q
+            or english_q in user_question
+            or user_question in gujarati_q
+            or gujarati_q in user_question
+        ):
+            best_match_index = idx
+            break
+
+    if best_match_index != -1:
         english_answer = df.iloc[best_match_index]["Answer (English)"]
         gujarati_answer = df.iloc[best_match_index]["Answer (Gujarati)"]
 
         # Detect Gujarati script (Unicode range \u0A80–\u0AFF)
         if any('\u0A80' <= c <= '\u0AFF' for c in user_question):
-            answer = gujarati_answer
+            kb_answer = gujarati_answer
         else:
-            answer = english_answer
+            kb_answer = english_answer
 
         prompt = f"""
 You are an AI assistant for Kamala Paints and Hardware.
@@ -114,7 +102,7 @@ Customer Question:
 {user_question}
 
 Knowledge Base Information:
-{answer}
+{kb_answer}
 
 Instructions:
 - Answer naturally and professionally.
@@ -123,8 +111,12 @@ Instructions:
 - Reply in the same language used by the customer.
 - Ask one short follow-up question related to paints or hardware.
 """
-        gemini_response = gemini_model.generate_content(prompt)
-        answer = gemini_response.text
+        try:
+            gemini_response = gemini_model.generate_content(prompt)
+            answer = gemini_response.text
+        except Exception as e:
+            print("Gemini API Error:", e)
+            answer = kb_answer  # fallback to raw knowledge base answer
 
     else:
         answer = (
@@ -132,7 +124,6 @@ Instructions:
             "Please contact Kamala Paints and Hardware for further assistance."
         )
 
-    # FIX: return is now at the correct indentation level (inside the function, after if/else)
     return jsonify({
         "question": user_question,
         "answer": answer
@@ -141,4 +132,7 @@ Instructions:
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(
+        host="0.0.0.0",
+        port=port
+    )
