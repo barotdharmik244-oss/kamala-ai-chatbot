@@ -10,9 +10,9 @@ import os
 import google.generativeai as genai
 
 genai.configure(
-    api_key=os.environ.get("AQ.Ab8RN6LOYG88E_mIF-NGkxiJ2VoawnzbRcmSu6aMMm1p1DN2GA")
+    api_key=os.environ.get("GEMINI_API_KEY")
 )
-genai.configure(api_key=os.environ.get("AQ.Ab8RN6LOYG88E_mIF-NGkxiJ2VoawnzbRcmSu6aMMm1p1DN2GA"))  # ⚠️ Move to env variable in production
+
 gemini_model = genai.GenerativeModel("gemini-2.5-flash")
 
 app = Flask(__name__)
