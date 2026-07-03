@@ -119,9 +119,31 @@ Instructions:
             answer = kb_answer  # fallback to raw knowledge base answer
 
     else:
+
+        prompt = f"""
+You are an AI assistant for Kamala Paints and Hardware.
+
+Customer Question:
+{user_question}
+
+Instructions:
+- Answer naturally and professionally.
+- If the question is related to paints or hardware, provide a helpful answer.
+- Reply in the same language as the customer.
+- Keep the answer practical and concise.
+- Ask one short follow-up question if appropriate.
+"""
+
+    try:
+        gemini_response = gemini_model.generate_content(prompt)
+        answer = gemini_response.text
+
+    except Exception as e:
+        print("Gemini API Error:", e)
+
         answer = (
-            "Sorry, I could not find the relevant information. "
-            "Please contact Kamala Paints and Hardware for further assistance."
+            "Sorry, I am unable to answer right now. "
+            "Please try again later."
         )
 
     return jsonify({
